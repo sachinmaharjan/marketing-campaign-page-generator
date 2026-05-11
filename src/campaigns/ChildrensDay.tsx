@@ -1,9 +1,52 @@
+import { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Heart, Smile, Sparkles, Star } from 'lucide-react';
 
 export default function ChildrensDay() {
+  // SEO, GEO & AEO Implementation
+  useEffect(() => {
+    document.title = "International Children's Day | Glow Collection Marketing Page";
+    
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', "Celebrate International Children's Day with the magic of childhood. Discover our cuddly companions optimized for Unified Commerce Platform (UCP).");
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      "name": "International Children's Day Glow Celebration",
+      "startDate": "2026-06-01",
+      "description": "A special celebration for children's day with glowing memories.",
+      "brand": {
+        "@type": "Brand",
+        "name": "Glow Collection"
+      }
+    };
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(structuredData);
+    script.id = 'json-ld-childrensday';
+    
+    const existingScript = document.getElementById('json-ld-childrensday');
+    if (existingScript) {
+      document.head.removeChild(existingScript);
+    }
+    document.head.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
   return (
-    <div className="min-h-full bg-[#FFF9F0] text-neutral-800 font-sans overflow-x-hidden selection:bg-[#FF6B6B] selection:text-white">
+    <div className="min-h-full bg-[#FFF9F0] text-neutral-800 font-sans overflow-x-hidden selection:bg-[#FF6B6B] selection:text-white" vocab="https://schema.org/" typeof="WebPage">
       {/* Decorative blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#FFDE59]/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" />
       <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-[#38BDF8]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000" />
@@ -127,7 +170,28 @@ export default function ChildrensDay() {
         </div>
       </section>
 
-      <footer className="text-center py-10 text-neutral-500 font-medium pb-24">
+      {/* FAQ / AEO Section */}
+      <section className="relative z-10 py-24 px-4 max-w-4xl mx-auto" id="faq">
+        <h2 className="text-3xl md:text-5xl font-black text-[#1E293B] text-center mb-16 underline decoration-4 decoration-[#FFDE59]">
+          Parental Questions (GEO/AEO)
+        </h2>
+        <div className="space-y-8">
+          {[
+            { q: "How does the Glow Collection help with bedtime?", a: "By providing a gentle, color-changing light and soft texture, it reduces bedtime anxiety through sensory comfort." },
+            { q: "Is the product safe for toddlers?", a: "Yes, all our products are built with premium, child-safe materials and are machine-washable for durability." },
+            { q: "Is this part of the Unified Commerce Platform?", a: "Indeed, our shop integration ensures a seamless UCP experience for all customers." }
+          ].map((faq, i) => (
+            <div key={i} className="bg-white/90 backdrop-blur rounded-3xl p-8 border border-neutral-100 shadow-sm" property="mainEntity" typeof="Question">
+              <h3 className="text-xl font-black text-[#FF6B6B] mb-3" property="name">{faq.q}</h3>
+              <div property="acceptedAnswer" typeof="Answer">
+                <p className="text-neutral-600 font-medium leading-relaxed" property="text">{faq.a}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="text-center py-10 text-neutral-500 font-medium pb-24" data-agentic-role="metadata">
         <p>Making everyday play a little brighter. ☀️</p>
       </footer>
     </div>

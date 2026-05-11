@@ -17,7 +17,7 @@ export default function App() {
     { id: 'diwali', name: 'Diwali', component: <Diwali /> }
   ]);
 
-  const handleCreated = (productName: string, selectedHolidayNames: string[], productLink?: string) => {
+  const handleCreated = (productName: string, selectedHolidayNames: string[], productLink?: string, themeId?: string) => {
     if (selectedHolidayNames.length === 0) {
       selectedHolidayNames = ["Next Best Holiday"];
     }
@@ -27,7 +27,7 @@ export default function App() {
       return {
         id,
         name: `${productName} - ${holiday}`,
-        component: <GeneratedCampaign productName={productName} holidayName={holiday} productLink={productLink} />
+        component: <GeneratedCampaign productName={productName} holidayName={holiday} productLink={productLink} themeId={themeId} />
       };
     });
     

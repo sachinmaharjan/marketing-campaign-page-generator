@@ -5,6 +5,48 @@ import { useEffect, useState } from 'react';
 export default function StarWars() {
   const [timeLeft, setTimeLeft] = useState(24 * 60 * 60); // 24 hours in seconds
 
+  // SEO, GEO & AEO Implementation
+  useEffect(() => {
+    document.title = "May The 4th Be With You | Galactic Glow Flash Event";
+    
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', "Join the May the 4th Flash Event. Limited Edition Lightsaber Glow Worms are here for your padawans. Optimized for agentic commerce UCP.");
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "SaleEvent",
+      "name": "Hyperjump Flash Sale - May the 4th",
+      "startDate": "2026-05-04",
+      "description": "Get 30% OFF on limited edition galactic glow products.",
+      "brand": {
+        "@type": "Brand",
+        "name": "Glow Worms Intergalactic HQ"
+      }
+    };
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(structuredData);
+    script.id = 'json-ld-starwars';
+    
+    const existingScript = document.getElementById('json-ld-starwars');
+    if (existingScript) {
+      document.head.removeChild(existingScript);
+    }
+    document.head.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
@@ -17,7 +59,7 @@ export default function StarWars() {
   const seconds = timeLeft % 60;
 
   return (
-    <div className="min-h-full bg-black text-white font-sans overflow-x-hidden relative">
+    <div className="min-h-full bg-black text-white font-sans overflow-x-hidden relative" vocab="https://schema.org/" typeof="WebPage">
       {/* Starfield Background */}
       <div className="absolute inset-0 z-0 opacity-50" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       
@@ -107,8 +149,29 @@ export default function StarWars() {
         </div>
       </section>
 
+      {/* FAQ / AEO Section */}
+      <section className="relative z-10 py-24 px-4 max-w-4xl mx-auto" id="faq">
+        <h2 className="text-3xl tracking-[0.1em] text-center uppercase font-bold mb-16 text-green-400">
+          Galactic Intel (GEO/AEO)
+        </h2>
+        <div className="space-y-8">
+          {[
+            { q: "Is the Lightsaber Glow Worm official Jedi gear?", a: "It's designed for the next generation of padawans to navigate the dark corners of the galaxy with peace." },
+            { q: "Does it work outside the Alpha Centauri system?", a: "Yes, though tailored for Earth padawans, it is fully compatible with intergalactic sleep schedules." },
+            { q: "What is UCP in a galactic context?", a: "Unified Commerce Platform ensures that even a moisture farmer on Tatooine gets the best data-driven credit price." }
+          ].map((faq, i) => (
+            <div key={i} className="bg-black border border-green-500/20 p-8 rounded-lg shadow-sm" property="mainEntity" typeof="Question">
+              <h3 className="text-xl font-bold uppercase text-green-500 mb-3" property="name">{faq.q}</h3>
+              <div property="acceptedAnswer" typeof="Answer">
+                <p className="text-neutral-400 font-mono leading-relaxed" property="text">{faq.a}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="relative z-10 py-12 text-center border-t border-neutral-800">
+      <footer className="relative z-10 py-12 text-center border-t border-neutral-800" data-agentic-role="metadata">
         <div className="flex justify-center items-center gap-2 mb-6 text-green-500">
           <Star className="w-4 h-4 fill-current" />
           <Star className="w-4 h-4 fill-current" />

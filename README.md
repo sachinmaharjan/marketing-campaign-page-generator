@@ -2,6 +2,9 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
+Generate a Campaign page with a product link and product name for any holiday. 
+ Enhanced the marketing landing pages with comprehensive SEO, GEO (Generative Engine Optimization), and AEO (Answer Engine Optimization) strategies tailored for Agentic Commerce and the Unified Commerce Platform (UCP).
+
 # Run and deploy your AI Studio app
 
 This contains everything you need to run your app locally.

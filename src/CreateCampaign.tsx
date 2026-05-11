@@ -274,12 +274,24 @@ const HOLIDAYS_BY_MONTH: Record<string, Holiday[]> = {
   ],
 };
 
-export default function CreateCampaign({ onCreated }: { onCreated?: (productName: string, selectedHolidayNames: string[], productLink?: string) => void }) {
+const COLOR_THEMES = [
+  { id: 'classic', name: 'Classic Indigo', colors: 'from-[#FF6B6B] to-[#FFB23F]', preview: 'bg-[#38BDF8]' },
+  { id: 'christmas', name: 'Festive Red', colors: 'from-red-600 to-emerald-600', preview: 'bg-red-600' },
+  { id: 'halloween', name: 'Spooky Orange', colors: 'from-orange-600 to-purple-600', preview: 'bg-orange-600' },
+  { id: 'valentine', name: 'Love Pink', colors: 'from-rose-600 to-pink-500', preview: 'bg-rose-600' },
+  { id: 'earth', name: 'Nature Green', colors: 'from-emerald-600 to-teal-500', preview: 'bg-emerald-600' },
+  { id: 'thanksgiving', name: 'Harvest Amber', colors: 'from-amber-600 to-orange-500', preview: 'bg-amber-600' },
+  { id: 'starwars', name: 'Galactic Black', colors: 'from-blue-400 to-red-500', preview: 'bg-black' },
+  { id: 'royal', name: 'Royal Purple', colors: 'from-purple-600 to-yellow-500', preview: 'bg-purple-600' },
+];
+
+export default function CreateCampaign({ onCreated }: { onCreated?: (productName: string, selectedHolidayNames: string[], productLink?: string, themeId?: string) => void }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState<string>('');
   const [generated, setGenerated] = useState(false);
   const [productName, setProductName] = useState('Glow Worms');
   const [productLink, setProductLink] = useState('https://example.com/glow-worms');
+  const [selectedThemeId, setSelectedThemeId] = useState('classic');
   
   // By default, current month is April based on system date, May is next upcoming
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set(['May']));
@@ -315,7 +327,7 @@ export default function CreateCampaign({ onCreated }: { onCreated?: (productName
               setGenerationStep('');
               setGenerated(true);
               if (onCreated) {
-                onCreated(productName, names, productLink);
+                onCreated(productName, names, productLink, selectedThemeId);
               }
            }, 1500);
         }, 1500);
@@ -485,31 +497,57 @@ export default function CreateCampaign({ onCreated }: { onCreated?: (productName
             </div>
 
             {/* Strategy & Context */}
-            <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-neutral-100">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-                  <Hash className="w-4 h-4 text-neutral-500" />
-                  Versions per holiday
-                </label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  max="5" 
-                  defaultValue="3"
-                  required
-                  className="w-full bg-white border border-neutral-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-neutral-900"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-neutral-100">
+              <div className="space-y-4">
+                 <label className="text-sm font-bold text-neutral-800 uppercase tracking-widest block">
+                   2. Select Visual Theme
+                 </label>
+                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                   {COLOR_THEMES.map((theme) => (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => setSelectedThemeId(theme.id)}
+                        className={`group relative flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all ${selectedThemeId === theme.id ? 'border-indigo-600 bg-indigo-50' : 'border-neutral-100 hover:border-neutral-200 bg-neutral-50'}`}
+                      >
+                        <div className={`w-full h-10 rounded-lg ${theme.preview} shadow-sm group-hover:scale-105 transition-transform`} />
+                        <span className="text-[10px] font-bold uppercase tracking-tight text-neutral-600">{theme.name}</span>
+                        {selectedThemeId === theme.id && (
+                          <div className="absolute top-1 right-1 w-4 h-4 bg-indigo-600 rounded-full border-2 border-white flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                          </div>
+                        )}
+                      </button>
+                   ))}
+                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-neutral-500" />
-                  Extra context (optional)
-                </label>
-                <textarea 
-                  placeholder="e.g. Focus on moms buying for toddlers..." 
-                  className="w-full bg-white border border-neutral-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-neutral-900 placeholder:text-neutral-400 h-12"
-                />
+
+              <div className="space-y-4 border-l pl-0 md:pl-6 border-neutral-100">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                    <Hash className="w-4 h-4 text-neutral-500" />
+                    Versions per holiday
+                  </label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max="5" 
+                    defaultValue="3"
+                    required
+                    className="w-full bg-white border border-neutral-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-neutral-900"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-neutral-500" />
+                    Extra context (optional)
+                  </label>
+                  <textarea 
+                    placeholder="e.g. Focus on moms buying for toddlers..." 
+                    className="w-full bg-white border border-neutral-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-neutral-900 placeholder:text-neutral-400 h-12"
+                  />
+                </div>
               </div>
             </div>
 
