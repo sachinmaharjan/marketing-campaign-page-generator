@@ -1,0 +1,543 @@
+import { useState, useMemo } from 'react';
+import { Wand2, Loader2, Link as LinkIcon, Box, Calendar, Hash, ChevronDown, ChevronRight, FileText } from 'lucide-react';
+
+interface Holiday {
+  id: string;
+  name: string;
+  dateStr: string;
+  category: string;
+}
+
+const MONTHS = [
+  'January', 'February', 'March',
+  'April', 'May', 'June',
+  'July', 'August', 'September',
+  'October', 'November', 'December',
+  'Movable date'
+];
+
+const HOLIDAYS_BY_MONTH: Record<string, Holiday[]> = {
+  'January': [
+    { id: 'feastofthecircu784', name: "Feast of the Circumcision", dateStr: "1 January", category: "" },
+    { id: 'twelfthnightepi598', name: "Twelfth Night (Epiphany Eve)", dateStr: "5 January", category: "" },
+    { id: 'epiphany920', name: "Epiphany", dateStr: "6 January", category: "the arrival of the Three Magi" },
+    { id: 'armenianapostol858', name: "Armenian Apostolic Christmas", dateStr: "6 January", category: "" },
+    { id: 'orthodoxchristm30', name: "Orthodox Christmas", dateStr: "7 January", category: "in churches using the Julian calendar . Until the year 2100, 7 January in the Julian Calendar is ..." },
+    { id: 'saintbasilsday864', name: "Saint Basil's Day", dateStr: "1 January", category: "In Greek traditions, he is the Father Christmas figure." },
+    { id: 'newyearsday16', name: "New Year's Day", dateStr: "1 January", category: "First day of the Gregorian Year." },
+    { id: 'oldnewyear318', name: "Old New Year", dateStr: "14 January", category: "New Year's Day according to the 'old' Julian calendar . Includes a winter ritual of strolling and..." },
+    { id: 'burnssupper25ja56', name: "Burns Supper . 25 January  – Celebration of the...", dateStr: "", category: "" },
+    { id: 'lohribhogi263', name: "Lohri / Bhogi", dateStr: "13 January", category: "" },
+    { id: 'makarsankranti169', name: "Makar Sankranti", dateStr: "14 January", category: "" },
+    { id: 'pongal225', name: "Pongal", dateStr: "14 January", category: "" },
+    { id: 'lohri372', name: "Lohri", dateStr: "13/14 January", category: "" },
+    { id: 'lohri195', name: "Lohri", dateStr: "13/14 January", category: "" }
+  ],
+  'February': [
+    { id: 'losar869', name: "Losar", dateStr: "Sometime in February (Moveable)", category: "" },
+    { id: 'candlemas628', name: "Candlemas", dateStr: "2 February", category: "Feast of the Presentation of the Lord; 40 days after Christmas; end of Christmas/Epiphany Season." },
+    { id: 'imbolc60', name: "Imbolc", dateStr: "1 February", category: "first day of spring in the Celtic calendar." },
+    { id: 'lupercalia783', name: "Lupercalia", dateStr: "15 February", category: "A celebration of bodily autonomy, sexual liberation, and reproduction; based on the Roman end-of-..." },
+    { id: 'groundhogday546', name: "Groundhog Day", dateStr: "2 February", category: "" },
+    { id: 'darwinday288', name: "Darwin Day", dateStr: "12 February", category: "" },
+    { id: 'saintvalentines722', name: "Saint Valentine's Day", dateStr: "14 February", category: "" }
+  ],
+  'March': [
+    { id: 'ditaeversalbani160', name: "Dita e Verës , Albanian 'Summer Day', spring fe...", dateStr: "", category: "14 March (traditionally for three days), also officially celebrated in Albania" },
+    { id: 'ostaraspringequ384', name: "Ostara , Spring equinox", dateStr: "21 March", category: "" },
+    { id: 'lent218', name: "Lent", dateStr: "typically in March, but sometimes in February", category: "the six weeks preceding Easter, starting with Ash Wednesday . See 'Movable'" },
+    { id: 'purim609', name: "Purim", dateStr: "", category: "typically in March, but sometimes in February . See 'Movable'" },
+    { id: 'saintdavidsday503', name: "Saint David's Day", dateStr: "1 March", category: "the fixed date to honor Saint David , patron saint of Wales , celebrated by Welshmen and women gl..." },
+    { id: 'internationalwo615', name: "International Women's Day", dateStr: "8 March", category: "" },
+    { id: 'worldkidneyday630', name: "World Kidney Day", dateStr: "second Thursday of March", category: "" },
+    { id: 'piday624', name: "Pi Day", dateStr: "14 March", category: "the fixed date to celebrate UNESCO 's International Day of Mathematics observed on 14 March (the ..." },
+    { id: 'whiteday751', name: "White Day", dateStr: "14 March", category: "the fixed date in which men in Asia receive gifts from women whom they had previously bought gift..." },
+    { id: 'internationaltr879', name: "International Transgender Day of Visibility", dateStr: "31 March", category: "" },
+    { id: 'ramadan71', name: "Ramadan", dateStr: "20 March, 2026 See 'moveable'.", category: "" },
+    { id: 'saintpatricksda529', name: "Saint Patrick's Day", dateStr: "17 March", category: "the fixed date to honor Saint Patrick has sometimes been moved by Church if it coincides with Hol..." },
+    { id: 'worlddownsyndro374', name: "World Down Syndrome Awareness Day - 21 March", dateStr: "", category: "" },
+    { id: 'nowruznewroz811', name: "Nowruz / Newroz (نه‌ورۆز/نوروز)", dateStr: "spring equinox (on or near 21 March)", category: "originally the Iranian New Year , celebrated as a secular holiday in Iran an" },
+    { id: 'saptabiptamaith854', name: "Sapta-Bipta (Maithil worship festival Sapta Mai...", dateStr: "", category: "" },
+    { id: 'holihinduholida96', name: "Holi (Hindu holiday in honor of Lord Vishnu )", dateStr: "", category: "" },
+    { id: 'dhulendi185', name: "Dhulendi", dateStr: "6 March", category: "" },
+    { id: 'ramnavami585', name: "Ram Navami", dateStr: "28 March", category: "Birthday of Lord Rama is celebrated all over India. The epic Ramayana is recited in temples and h..." }
+  ],
+  'April': [
+    { id: 'pesachpassover400', name: "Pesach /Passover", dateStr: "late March or in April . See 'movable'", category: "" },
+    { id: 'hanamatsuri548', name: "Hanamatsuri", dateStr: "8 April", category: "Celebrated in Japan as Buddha's Birthday." },
+    { id: 'eidulfitr981', name: "Eid-Ul-Fitr", dateStr: "9 April, 2024", category: "" },
+    { id: 'worldklassikday643', name: "World Klassik Day", dateStr: "13 April", category: "Celebrated by Klassikans as DON SANTO's Birthday." },
+    { id: 'ambedkarjayanti426', name: "Ambedkar Jayanti", dateStr: "14 April World Knowledge Day", category: "" },
+    { id: 'aprilfoolsday673', name: "April Fools' Day", dateStr: "1 April", category: "" },
+    { id: 'worldautismawar441', name: "World Autism Awareness Day", dateStr: "2 April", category: "" },
+    { id: 'childrensday711', name: "Children's Day", dateStr: "4 April", category: "" },
+    { id: 'southandsouthea567', name: "South and Southeast Asian solar New Year", dateStr: "", category: "roughly 14 April , including Cambodian New Year , Lao New Year , Sinhalese New Year , Songkran (T..." },
+    { id: '420431', name: "420", dateStr: "20 April , celebrated within cannabis culture", category: "" },
+    { id: 'earthday933', name: "Earth Day", dateStr: "22 April", category: "" },
+    { id: 'anzacday448', name: "Anzac Day", dateStr: "25 April", category: "" },
+    { id: 'goodfriday320', name: "Good Friday", dateStr: "the Friday preceding Easter Sunday, see 'movable'", category: "" },
+    { id: 'holysaturday903', name: "Holy Saturday", dateStr: "", category: "also called Easter Eve, the Saturday preceding Easter Sunday, see 'movable'" },
+    { id: 'easter163', name: "Easter", dateStr: "", category: "typically in April, but sometimes in March or May, see 'movable'" },
+    { id: 'saintgeorgesday183', name: "Saint George's Day", dateStr: "", category: "23 April . The date to honor Saint George is moved by Church if it coincides with the week before..." },
+    { id: 'ramanavami956', name: "Rama Navami", dateStr: "birth of the god Rama", category: "" },
+    { id: 'hanumanjayanti231', name: "Hanuman Jayanti", dateStr: "", category: "typically a week after Rama Navami, in honour of the birth of Hanuman" },
+    { id: 'gangaur113', name: "Gangaur", dateStr: "", category: "occurring in April, in honour of the victory of Goddess Mahagauri" },
+    { id: 'maithil617', name: "Maithil", dateStr: "occurring in April, Joor", category: "seetal First day of Mithila calendar" },
+    { id: 'hexennacht26', name: "Hexennacht", dateStr: "30 April", category: "A TST Satanic occasion solemnly honoring those who fell victim to superstition and pseudoscience,..." }
+  ],
+  'May': [
+    { id: 'yomhashoah333', name: "Yom HaShoah", dateStr: "", category: "" },
+    { id: 'lagbaomer726', name: "Lag BaOmer", dateStr: "", category: "" },
+    { id: 'shavuot781', name: "Shavuot", dateStr: "", category: "usually in May, but sometimes in June . See 'Movable'" },
+    { id: 'mayday623', name: "May Day", dateStr: "1 May", category: "a traditional spring holiday in many cultures." },
+    { id: 'vesak892', name: "Vesak", dateStr: "Buddha's Birthday", category: "celebrated on Vesak Full Moon by most buddhists." },
+    { id: 'internationalwo179', name: "International Workers' Day", dateStr: "1 May", category: "" },
+    { id: 'starwarsday897', name: "Star Wars Day", dateStr: "May the 4th", category: "" },
+    { id: 'cincodemayomay5740', name: "Cinco de Mayo 'May 5'", dateStr: "", category: "" },
+    { id: 'europeanunionda478', name: "European Union Day May 9", dateStr: "", category: "" },
+    { id: 'matariki13', name: "Matariki", dateStr: "", category: "The 'Maori new year' festival running between a week and month from late May, celebrated by kite ..." },
+    { id: 'yomhazikaron615', name: "Yom HaZikaron", dateStr: "", category: "" },
+    { id: 'raibshainpaavei416', name: "Raib-Shain Paavein Worship of Sun and Saturn god", dateStr: "", category: "" }
+  ],
+  'June': [
+    { id: 'intiraymi78', name: "Inti Raymi", dateStr: "late June", category: "festival of the Sun in Quechua , winter solstice festival in areas of the former Inca Empire , st..." },
+    { id: 'wetripantu63', name: "We Tripantu", dateStr: "", category: "" },
+    { id: 'rathayatra241', name: "Ratha Yatra", dateStr: "procession of Vishnu", category: "" },
+    { id: 'eidalfitr239', name: "Eid al-Fitr", dateStr: "30 March or 31 March 2025", category: "" },
+    { id: 'worldenvironmen986', name: "World Environment Day", dateStr: "5 June", category: "" },
+    { id: 'bloomsday853', name: "Bloomsday", dateStr: "16 June", category: "celebration of the life and writings of James Joyce" },
+    { id: 'worldhumanistda630', name: "World Humanist Day", dateStr: "21 June", category: "" },
+    { id: 'midsummer279', name: "Midsummer", dateStr: "21 June", category: "" },
+    { id: 'olympicday752', name: "Olympic Day", dateStr: "23 June", category: "" },
+    { id: 'internationallg768', name: "International LGBT Pride Day", dateStr: "28 June", category: "" },
+    { id: 'juneteenth197', name: "Juneteenth", dateStr: "19 June", category: "to commemorate the emancipation of enslaved people in the United States" }
+  ],
+  'July': [
+    { id: 'yulefestmidwint406', name: "Yulefest / Midwinter Christmas", dateStr: "late June or July", category: "Australian/New Zealander winter 'Christmas/Yuletide'" },
+    { id: 'matariki905', name: "Matariki", dateStr: "late June or early July", category: "Polynesian New Year. In Hawai'i this begins the four month season of Makahiki . In New Zealand th..." },
+    { id: 'asalhapuja918', name: "Asalha Puja", dateStr: "", category: "Dhamma Day, celebrating the Buddha's first sermon. Held on the first full moon in Ashadha ." },
+    { id: 'gurupurnima412', name: "Guru Purnima", dateStr: "", category: "a reverential day in honour of all teachers and instructors." },
+    { id: 'devshayaniekada256', name: "Devshayani Ekadashi", dateStr: "", category: "solemnity of the repose of Vishnu , coincides with the first day of the highly inauspicious Chatu..." },
+    { id: 'eidaladha160', name: "Eid al-Adha", dateStr: "20 July", category: "" },
+    { id: 'unveilingday693', name: "Unveiling Day", dateStr: "25 July", category: "A TST Satanic celebration of religious plurality and shedding archaic superstition; celebrated on..." }
+  ],
+  'August': [
+    { id: 'assumptionofmar263', name: "Assumption of Mary", dateStr: "15 August", category: "" },
+    { id: 'saintbartholome649', name: "Saint Bartholomew's Day", dateStr: "24 August", category: "" },
+    { id: 'rakshabandhan979', name: "Raksha Bandhan", dateStr: "a festival commemorating filial love.", category: "" },
+    { id: 'krishnajanmasht769', name: "Krishna Janmashtami", dateStr: "birth anniversary of Krishna .", category: "" },
+    { id: 'onam343', name: "Onam", dateStr: "a festival of Kerala, India .", category: "" },
+    { id: 'internationalfr565', name: "International Friendship Day", dateStr: "2 August", category: "" },
+    { id: 'internationalle993', name: "International Lefthanders Day", dateStr: "13 August", category: "" }
+  ],
+  'September': [
+    { id: 'roshhashanah171', name: "Rosh Hashanah", dateStr: "", category: "usually September, sometimes early October see 'Moveable'" },
+    { id: 'yomkippur460', name: "Yom Kippur", dateStr: "late September, early October see 'Moveable'", category: "" },
+    { id: 'sukkot366', name: "Sukkot", dateStr: "", category: "sometimes late September, usually October see 'Moveable'" },
+    { id: 'labordaylabourd656', name: "Labor Day / Labour Day", dateStr: "first Monday of September (US/Canada)", category: "" },
+    { id: 'worldduchennemu49', name: "World Duchenne Muscular Dystrophy Awareness Day", dateStr: "7 September", category: "" },
+    { id: 'internationalta588', name: "International Talk Like a Pirate Day", dateStr: "19 September", category: "" },
+    { id: 'worldpeaceday216', name: "World Peace Day", dateStr: "21 September", category: "" },
+    { id: 'ganeshchaturthi943', name: "Ganesh Chaturthi", dateStr: "Commemorating the birth of Hindu god Ganesha", category: "" }
+  ],
+  'October': [
+    { id: 'simchattorah747', name: "Simchat Torah", dateStr: "", category: "" },
+    { id: 'dhammachakrapra986', name: "Dhammachakra Pravartan Din", dateStr: "", category: "a Buddhist festival in India that celebrates the Buddhist conversion of B. R. Ambedkar and his fo..." },
+    { id: 'navratri645', name: "Navratri", dateStr: "celebrates the conquest of Goddess Durga", category: "" },
+    { id: 'diwali878', name: "Diwali", dateStr: "mid", category: "October–mid-November  – see 'movable'" },
+    { id: 'kartikpurnima37', name: "Kartik Purnima", dateStr: "", category: "An additional commemoration of the Celestial Diwali, or the 'Diwali of the Gods'; hence the Sansk..." },
+    { id: 'samhain932', name: "Samhain", dateStr: "31 October", category: "1 November  – first day of winter in the Celtic calendar (and Celtic New Year's Day)" },
+    { id: 'gandhijayanti76', name: "Gandhi Jayanti", dateStr: "", category: "an indoctrinated festival; the birth anniversary of Mahatma Gandhi , falls on 2 October." },
+    { id: 'halloween379', name: "Halloween", dateStr: "31 October", category: "also known as Allhalloween, All Hallows' Eve, or All Saints' Eve, is a celebration observed in ma..." }
+  ],
+  'November': [
+    { id: 'allsaintssoulsd180', name: "All Saints' / Souls' Day", dateStr: "1", category: "2 November  – in Western Christian churches." },
+    { id: 'diadelosmuertos533', name: "Dia de los muertos (Day of the Dead)", dateStr: "1", category: "2 November  – Celebrated in mostly Catholic Mexico but with origins that predate European contact." },
+    { id: 'nativityfast674', name: "Nativity Fast", dateStr: "forty days leading to Christmas", category: "also Saint Philip's fast, Christmas fast, or winter Lent or fast ( Eastern Christianity )." },
+    { id: 'internationalpi146', name: "International Pianist Day", dateStr: "", category: "8 November : celebrates the mastery of playing piano" },
+    { id: 'armisticedayals510', name: "Armistice Day (also Remembrance Day or Veterans...", dateStr: "11 November : memorial day honoring the war dead", category: "" },
+    { id: 'internationalme907', name: "International Men's Day", dateStr: "19 November", category: "" },
+    { id: 'transgenderdayo44', name: "Transgender Day of Remembrance", dateStr: "20 November", category: "" },
+    { id: 'thanksgivingday256', name: "Thanksgiving Day", dateStr: "", category: "fourth Thursday of November (US); second Monday of October (CAN)" },
+    { id: 'diwali700', name: "Diwali", dateStr: "mid", category: "October–mid-November  – see 'movable'" },
+    { id: 'mandalavratham86', name: "Mandala Vratham", dateStr: "mid", category: "November to mid-January  – see 'movable': 48 days of fasting in honour of the deity Ayyappan begins." }
+  ],
+  'December': [
+    { id: 'bodhiday920', name: "Bodhi Day", dateStr: "8 December", category: "Day of Enlightenment, celebrating the day that the historical Buddha (Shakyamuni or Siddhartha Ga..." },
+    { id: 'advent541', name: "Advent", dateStr: "", category: "starts four Sundays before Christmas Day and ends on Christmas Eve" },
+    { id: 'saintbarbarasda646', name: "Saint Barbara's Day", dateStr: "4 December", category: "The Feast of St. Barbara is celebrated by Artillery regiments across the Commonwealth and some we..." },
+    { id: 'krampusnacht219', name: "Krampusnacht", dateStr: "5 December", category: "The Feast of St. Nicholas is celebrated in parts of Europe on 6 December. In Alpine countries, Sa..." },
+    { id: 'saintnicholasda305', name: "Saint Nicholas Day", dateStr: "6 December", category: "" },
+    { id: 'feastoftheimmac900', name: "Feast of the Immaculate Conception", dateStr: "8 December", category: "The day of Virgin Mary's Immaculate Conception is celebrated as a public holiday in many Catholic c" },
+    { id: 'saintlucysday918', name: "Saint Lucy's Day", dateStr: "13 December", category: "Church Feast Day. Saint Lucy comes as a young woman with lights and sweets." },
+    { id: 'lasposadas389', name: "Las Posadas", dateStr: "16", category: "24 December  – procession to various family lodgings for celebration and prayer and to re-enact M..." },
+    { id: 'longestnight690', name: "Longest Night", dateStr: "", category: "A modern Christian service to help those coping with loss, usually held on the eve of the Winter ..." },
+    { id: 'nikoljdan366', name: "Nikoljdan", dateStr: "19 December", category: "the most common slava , St. Nicholas's feast day." },
+    { id: 'christmaseve170', name: "Christmas Eve", dateStr: "24 December", category: "In many countries e.g. the German speaking countries, but also in Poland, Hungary and the Nordic ..." },
+    { id: 'christmasday133', name: "Christmas Day", dateStr: "25 December and 7 January", category: "celebrated by Christians and non-Christians alike." },
+    { id: 'anastasiaofsirm648', name: "Anastasia of Sirmium feast day", dateStr: "25 December", category: "" },
+    { id: 'twelvedaysofchr108', name: "Twelve Days of Christmas", dateStr: "25 December", category: "6 January" },
+    { id: 'saintstephensda506', name: "Saint Stephen's Day", dateStr: "26 December", category: "In Germany, Poland, the Czech Republic, Slovakia and Ireland a holiday celebrated as Second Day o..." },
+    { id: 'saintjohntheeva851', name: "Saint John the Evangelist 's Day", dateStr: "27 December", category: "" },
+    { id: 'holyinnocentsda494', name: "Holy Innocents ' Day", dateStr: "28 December", category: "" },
+    { id: 'saintsylvesters531', name: "Saint Sylvester's Day", dateStr: "31 December", category: "" },
+    { id: 'winterdayofreme540', name: "Winter Day of Remembrance", dateStr: "", category: "" },
+    { id: 'karthikadeepam249', name: "Karthika Deepam", dateStr: "3", category: "6 December (varies per year) is a festival of lights that is observed mainly by Hindu Tamils, and..." },
+    { id: 'panchaganapati394', name: "Pancha Ganapati", dateStr: "a modern five", category: "day Hindu festival celebrated from 21 through 25 December in honor of Ganesha." },
+    { id: 'vaikunthaekadas749', name: "Vaikuntha Ekadashi", dateStr: "Mid December", category: "Mid January: see 'moveable'." },
+    { id: 'mdraniht532', name: "Mōdraniht", dateStr: "", category: "or Mothers' Night, the Saxon winter solstice festival." },
+    { id: 'saturnalia956', name: "Saturnalia", dateStr: "17", category: "23 December – An ancient Roman winter solstice festival in honor of the deity Saturn , held on 17..." },
+    { id: 'diesnatalissoli901', name: "Dies Natalis Solis Invicti (Day of the birth of...", dateStr: "25 December", category: "late Roman Empire" },
+    { id: 'humanlight10', name: "HumanLight", dateStr: "23 December", category: "Humanist holiday originated by the New Jersey Humanist Network in celebration of 'a Humanist's vi..." },
+    { id: 'salgirahkhushia999', name: "Salgirah Khushiali", dateStr: "13 December", category: "celebration of Shia Ismaili Muslims of their Imam ( Aga Khan IV )" },
+    { id: 'hanukkah879', name: "Hanukkah", dateStr: "", category: "usually falls anywhere between late November and early January. See 'movable'" },
+    { id: 'yule542', name: "Yule", dateStr: "", category: "Pagan winter festival that was celebrated by the historical Germanic people from late December to..." },
+    { id: 'koliada974', name: "Koliada", dateStr: "", category: "Slavic winter festival celebrated on late December with parades and singers who visit houses and ..." },
+    { id: 'wassailingwinte909', name: "Wassailing winter celebration that lands on the...", dateStr: "", category: "" },
+    { id: 'yalda691', name: "Yalda", dateStr: "21 December", category: "The turning point, Winter Solstice. As the longest night of the year and the beginning of the len..." },
+    { id: 'solinvictus681', name: "Sol Invictus", dateStr: "25 December", category: "A TST Satanic celebration of being unconquered by superstition and consistent in the pursuit and ..." },
+    { id: 'worldaidsday540', name: "World AIDS Day", dateStr: "1 December", category: "" },
+    { id: 'internationalda404', name: "International Day of Disabled Persons", dateStr: "3 December", category: "" },
+    { id: 'humanrightsday264', name: "Human Rights Day", dateStr: "10 December", category: "" },
+    { id: 'zamenhofday905', name: "Zamenhof Day", dateStr: "15 December", category: "Birthday of L. L. Zamenhof , inventor of Esperanto ; holiday reunion for Esperantists" },
+    { id: 'soyal648', name: "Soyal", dateStr: "21 December", category: "Zuni and Hopi" },
+    { id: 'wintersolsticeo934', name: "Winter Solstice or Summer Solstice", dateStr: "on or about 21 December", category: "" },
+    { id: 'dongzhifestival148', name: "Dongzhi Festival  – a celebration of Winter", dateStr: "", category: "" },
+    { id: 'festivus143', name: "Festivus", dateStr: "23 December", category: "a secular holiday created by Daniel O'Keefe and then made popular by his son Dan O'Keefe , a writ..." },
+    { id: 'newtonmas450', name: "Newtonmas", dateStr: "25 December", category: "As an alternative to celebrating the religious holiday Christmas, some atheists and skeptics have..." },
+    { id: 'boxingday724', name: "Boxing Day", dateStr: "26 December", category: "" },
+    { id: 'kwanzaa171', name: "Kwanzaa", dateStr: "26 December", category: "1 January  – Pan-African festival celebrated in the US" },
+    { id: 'newyearseve620', name: "New Year's Eve", dateStr: "31 December", category: "last day of the Gregorian year" },
+    { id: 'misoka413', name: "Ōmisoka", dateStr: "31 December", category: "Japanese traditional celebration on the last day of the year" },
+    { id: 'hogmanay416', name: "Hogmanay", dateStr: "night of 31 December", category: "before dawn of 1 January  – Scottish New Year's Eve celebration" },
+    { id: 'watchnight947', name: "Watch Night", dateStr: "31 December", category: "" },
+    { id: 'chalica494', name: "Chalica", dateStr: "first week of December", category: "A holiday created in 2005, celebrated by some Unitarian Universalists ." },
+    { id: 'erastide631', name: "Erastide", dateStr: "", category: "In David Eddings ' Belgariad and Malloreon series, Erastide is a celebration of the day on which ..." },
+    { id: 'feastofwinterve248', name: "Feast of Winter Veil", dateStr: "15 December", category: "2 January  – A holiday in World of Warcraft . This holiday is based on Christmas. Cities are deco..." },
+    { id: 'feastofalvis342', name: "Feast of Alvis", dateStr: "", category: "in the TV series Sealab 2021 . 'Believer, you have forgotten the true meaning of Alvis Day. Neith..." },
+    { id: 'hogswatch771', name: "Hogswatch", dateStr: "", category: "a holiday celebrated in the fictional Discworld . It is very similar to the Christian celebration..." },
+    { id: 'frostvale877', name: "Frostvale", dateStr: "", category: "the winter holidays in the Artix Entertainment universe" },
+    { id: 'decemberween273', name: "Decemberween", dateStr: "25 December", category: "a parody of Christmas that features gift-giving, carol-singing and decorated trees. The fact that..." },
+    { id: 'wintersdaytheen835', name: "Wintersday, the end-of-the-year celebration in ...", dateStr: "", category: "" },
+    { id: 'iescompetitiont535', name: "IES Competition Time, Don's Event questions on ...", dateStr: "", category: "" },
+    { id: 'winterscrest318', name: "Winter's Crest", dateStr: "", category: "the winter celebration held on the continent of Tal'Dorei in the world of Exandria, as featured i..." },
+    { id: 'candlenights757', name: "Candlenights", dateStr: "pan", category: "religious, pan-sexual, personal pan pizza winter holiday created by Justin , Travis , and Griffin..." },
+    { id: 'snowdown657', name: "Snowdown", dateStr: "", category: "A celebration observed in Runetera, The world in which League of Legends is set. During snowdown,..." },
+    { id: 'lifeday283', name: "Life Day", dateStr: "", category: "Wookiee celebration of life, featured in the Star Wars Holiday Special , in which Wookiees gather..." },
+    { id: 'thedawning812', name: "The Dawning", dateStr: "", category: "A celebration of the Light of the Traveler, and a time to spread cheer and give gifts to help kee..." }
+  ],
+  'Movable date': [
+    { id: 'lunarnewyear368', name: "Lunar New Year", dateStr: "late January", category: "mid February  – considered the end of winter in the traditional Lunar calendar" },
+    { id: 'sadeh388', name: "Sadeh", dateStr: "A mid", category: "winter feast to honor fire and to 'defeat the forces of darkness, frost and cold'. Sadé or Sada i..." },
+    { id: 'chaharshanbehsu566', name: "Chahar Shanbeh Suri", dateStr: "", category: "Festival of Fire, Last Tuesday of the Iranian Calendar year. It marks the importance of the light..." },
+    { id: 'parwanaya147', name: "Parwanaya", dateStr: "", category: "Five days that Hayyi Rabbi created the angels and the universe. The 5 epagomenals (extra days) in..." },
+    { id: 'dehwadaimana803', name: "Dehwa Daimana", dateStr: "Birthday of John the Baptist .", category: "" },
+    { id: 'kanshiuzahli185', name: "Kanshi u-Zahli", dateStr: "New Year's Eve", category: "" },
+    { id: 'dehwarabba670', name: "Dehwa Rabba", dateStr: "New Year's Day", category: "" },
+    { id: 'dehwadilamrabba312', name: "Dehwa d-Šišlam Rabba ( Classical Mandaic", dateStr: "", category: "ࡃࡉࡄࡁࡀ ࡖࡔࡉࡔࡋࡀࡌ ࡓࡁࡀ ) or Nauruz Zūṭa ( Classical Mandaic : ࡍࡀࡅࡓࡅࡆ ࡆࡅࡈࡀ ): Little New Year, on the 6th" },
+    { id: 'dehwahaninaclas685', name: "Dehwa Hanina ( Classical Mandaic", dateStr: "", category: "ࡃࡉࡄࡁࡀ ࡄࡍࡉࡍࡀ ) or Dehwa Ṭurma : the Little Feast, begins on the 18th day of Taura. This holiday co..." },
+    { id: 'eadfel884', name: "Ead Fel", dateStr: "", category: "(Memorial Day) Crushed dates with roasted sesame seeds are eaten." },
+    { id: 'ashoriyaashuriy262', name: "Ashoriya ( Ashuriyah )", dateStr: "", category: "Day of remembrance for the drowned people of Noah's flood . Grains and cereals are eaten. Mandaea..." },
+    { id: 'ramadan658', name: "Ramadan", dateStr: "", category: "During this holy time, the ninth month of the Islamic calendar year, Muslims do not eat, drink, o..." },
+    { id: 'eidalfitristhee94', name: "Eid al-Fitr is the earlier of the two official ...", dateStr: "", category: "" },
+    { id: 'eidaladhaisthel477', name: "Eid al-Adha is the latter of the two official h...", dateStr: "", category: "" },
+    { id: 'islamicnewyeara887', name: "Islamic New Year , also called the Hijri New Ye...", dateStr: "", category: "" },
+    { id: 'ashuraisanislam304', name: "Ashura is an Islamic holiday that occurs on the...", dateStr: "", category: "" },
+    { id: 'mawlidistheobse93', name: "Mawlid is the observance of the birthday of the...", dateStr: "", category: "" },
+    { id: 'israandmirajare682', name: "Isra and Mi'raj are the two parts of a Night Jo...", dateStr: "", category: "" },
+    { id: 'midshabanalsoba40', name: "Mid-Sha'ban also Bara'at Night, is a Muslim hol...", dateStr: "", category: "" },
+    { id: 'dayofarafahisan523', name: "Day of Arafah is an Islamic holiday that falls ...", dateStr: "", category: "" },
+    { id: 'pesach730', name: "Pesach", dateStr: "", category: "late March or in April Festival celebrating the Hebrews captivity in Egypt at the time when God c..." },
+    { id: 'shavuot454', name: "Shavuot", dateStr: "mid May to mid June", category: "" },
+    { id: 'roshhashanah528', name: "Rosh Hashanah", dateStr: "usually September, sometimes early October", category: "" },
+    { id: 'yomkippur515', name: "Yom Kippur", dateStr: "late September, early October", category: "" },
+    { id: 'sukkot409', name: "Sukkot", dateStr: "sometimes late September, usually October", category: "" },
+    { id: 'hanukkahnukkhus526', name: "Hanukkah  – Ḥănukkāh , usually spelled חנוכה, p...", dateStr: "", category: "" },
+    { id: 'purim211', name: "Purim", dateStr: "late February, early March", category: "" },
+    { id: 'diwali336', name: "Diwali", dateStr: "mid", category: "October–mid-November  – known as the Festival of Lights, this Hindu holiday celebrates the victor..." },
+    { id: 'navratri140', name: "Navratri", dateStr: "", category: "The great nine nights of the Goddess Durga , commemorating Her victory against the demon Mahishas..." },
+    { id: 'kartikpurnima181', name: "Kartik Purnima", dateStr: "", category: "" },
+    { id: 'onam187', name: "Onam", dateStr: "", category: "" },
+    { id: 'janamashtami0', name: "Janamashtami", dateStr: "", category: "" },
+    { id: 'ramanavami752', name: "Rama Navami", dateStr: "", category: "" },
+    { id: 'mahashivaratri232', name: "Maha Shivaratri", dateStr: "", category: "" },
+    { id: 'sharadpurnimala807', name: "Sharad Purnima / Lakshmi Puja / Kali Puja", dateStr: "", category: "" },
+    { id: 'vasantpanchami79', name: "Vasant Panchami", dateStr: "", category: "" },
+    { id: 'allhindufestiva958', name: "All Hindu festivals except Gandhi Jayanti .", dateStr: "", category: "" },
+    { id: 'malankacapsofft745', name: "Malanka caps off the festivities of the Christm...", dateStr: "", category: "" },
+    { id: 'maslenitsainsla538', name: "Maslenitsa in Slavic mythology , a celebration ...", dateStr: "", category: "" },
+    { id: 'shrovetuesday375', name: "Shrove Tuesday", dateStr: "", category: "one day before Ash Wednesday, 47 days before Easter" },
+    { id: 'easter749', name: "Easter", dateStr: "", category: "the first Sunday after the Paschal full moon/the first full moon after the vernal equinox" },
+    { id: 'goodfriday604', name: "Good Friday", dateStr: "", category: "Good Friday is a Christian religious holiday commemorating the crucifixion of Jesus Christ and hi..." },
+    { id: 'advent342', name: "Advent", dateStr: "", category: "Advent is the preparation season for Christmas, when the first candle is lit on the Advent wreath..." },
+    { id: 'holiday955', name: "Holiday", dateStr: "", category: "Around the time of Christmas, Hanukkah and Kwanzaa (generally known as the Christmas and holiday ..." }
+  ],
+};
+
+export default function CreateCampaign({ onCreated }: { onCreated?: (productName: string, selectedHolidayNames: string[], productLink?: string) => void }) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState<string>('');
+  const [generated, setGenerated] = useState(false);
+  const [productName, setProductName] = useState('Glow Worms');
+  const [productLink, setProductLink] = useState('https://example.com/glow-worms');
+  
+  // By default, current month is April based on system date, May is next upcoming
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set(['May']));
+  const [selectedHolidays, setSelectedHolidays] = useState<Set<string>>(new Set());
+  const [allExpanded, setAllExpanded] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsGenerating(true);
+    setGenerationStep('Scraping product link for context...');
+    
+    // Extract actual holiday names before mocking generation
+    let names: string[] = [];
+    if (selectedHolidays.size > 0) {
+       for (const month of Object.values(HOLIDAYS_BY_MONTH)) {
+          for (const holiday of month) {
+             if (selectedHolidays.has(holiday.id)) {
+                names.push(holiday.name);
+             }
+          }
+       }
+    }
+
+    // Simulate multi-agent workflow
+    setTimeout(() => {
+      setGenerationStep('Agent 1: Analyzing holiday calendar...');
+      setTimeout(() => {
+        setGenerationStep(`Agent 2: Strategizing marketing landing page for ${productName}...`);
+        setTimeout(() => {
+           setGenerationStep('Agent 3: Building HTML & CSS marketing landing pages...');
+           setTimeout(() => {
+              setIsGenerating(false);
+              setGenerationStep('');
+              setGenerated(true);
+              if (onCreated) {
+                onCreated(productName, names, productLink);
+              }
+           }, 1500);
+        }, 1500);
+      }, 1500);
+    }, 1500);
+  };
+
+  const toggleMonth = (month: string) => {
+    const next = new Set(expandedMonths);
+    if (next.has(month)) {
+      next.delete(month);
+    } else {
+      next.add(month);
+    }
+    setExpandedMonths(next);
+  };
+
+  const toggleAllMonths = () => {
+    if (allExpanded) {
+      setExpandedMonths(new Set());
+      setAllExpanded(false);
+    } else {
+      setExpandedMonths(new Set(MONTHS));
+      setAllExpanded(true);
+    }
+  };
+
+  const toggleHoliday = (holidayId: string) => {
+    const next = new Set(selectedHolidays);
+    if (next.has(holidayId)) {
+      next.delete(holidayId);
+    } else {
+      next.add(holidayId);
+    }
+    setSelectedHolidays(next);
+  };
+
+  return (
+    <div className="min-h-full bg-[#f8f9fa] text-neutral-900 font-sans p-4 md:p-8 flex justify-center">
+      <div className="max-w-4xl w-full bg-white p-6 md:p-10 rounded-2xl shadow-xl border border-neutral-200 mt-6 mb-10">
+        <h2 className="text-3xl font-bold mb-2 flex items-center gap-3 text-neutral-800">
+          <Wand2 className="text-indigo-500 w-8 h-8" />
+          Marketing Page Generator
+        </h2>
+        <p className="text-neutral-500 mb-10">Configure your product context and select target holidays to let the AI agents build your marketing landing pages.</p>
+        
+        {generated ? (
+          <div className="bg-green-500/10 border border-green-500/30 p-8 rounded-xl text-center">
+            <h3 className="text-2xl font-bold text-green-700 mb-3">Landing Pages Generated!</h3>
+            <p className="text-neutral-600 mb-8 text-lg">Your marketing landing pages have been created successfully. You can view them in the tabs above.</p>
+            <button 
+              onClick={() => setGenerated(false)}
+              className="px-8 py-3 bg-neutral-800 text-white hover:bg-neutral-700 font-bold rounded-lg transition-colors"
+            >
+              Start New Landing Page
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-10">
+            {/* Product Details Section */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-neutral-800 uppercase tracking-wider border-b pb-2">1. Product Details</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                    <Box className="w-4 h-4 text-neutral-500" />
+                    Product Name
+                  </label>
+                  <input 
+                    type="text" 
+                    required
+                    value={productName}
+                    onChange={(e) => setProductName(e.target.value)}
+                    placeholder="e.g. Glow Worms" 
+                    className="w-full bg-white border border-neutral-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-neutral-400"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                    <LinkIcon className="w-4 h-4 text-neutral-500" />
+                    Product Link
+                  </label>
+                  <input 
+                    type="url" 
+                    required
+                    value={productLink}
+                    onChange={(e) => setProductLink(e.target.value)}
+                    placeholder="https://yoursite.com/product" 
+                    className="w-full bg-white border border-neutral-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-neutral-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Holiday Selection Section */}
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1">
+                <h3 className="text-sm font-bold text-neutral-600 uppercase tracking-widest">
+                  SELECT HOLIDAYS FROM THE MULTINATIONAL CALENDAR
+                </h3>
+                <p className="text-neutral-500 text-sm">
+                  {selectedHolidays.size === 0 
+                    ? "No holidays selected — Agent 1 will auto-pick the best for Kids & Toys" 
+                    : `${selectedHolidays.size} holiday${selectedHolidays.size > 1 ? 's' : ''} selected`}
+                </p>
+              </div>
+
+              <button 
+                type="button"
+                onClick={toggleAllMonths}
+                className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+              >
+                {allExpanded ? "Collapse all months" : "Expand all months"}
+              </button>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {MONTHS.map(month => {
+                  const isExpanded = expandedMonths.has(month);
+                  const holidays = HOLIDAYS_BY_MONTH[month] || [];
+                  
+                  return (
+                    <div key={month} className="bg-[#f2f1ee] rounded-xl overflow-hidden border border-[#e5e4e0]">
+                      <button
+                        type="button"
+                        onClick={() => toggleMonth(month)}
+                        className="w-full px-4 py-3 text-left font-semibold text-neutral-800 flex justify-between items-center hover:bg-[#ebeae6] transition-colors"
+                      >
+                        {month}
+                        {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500" /> : <ChevronRight className="w-4 h-4 text-neutral-500" />}
+                      </button>
+                      
+                      {isExpanded && holidays.length > 0 && (
+                        <div className="p-2 space-y-1 bg-white border-t border-[#e5e4e0]">
+                          {holidays.map(holiday => {
+                            const isSelected = selectedHolidays.has(holiday.id);
+                            return (
+                              <label key={holiday.id} className="flex items-start gap-3 p-3 hover:bg-neutral-50 rounded-lg cursor-pointer transition-colors">
+                                <input 
+                                  type="checkbox"
+                                  className="sr-only"
+                                  checked={isSelected}
+                                  onChange={() => toggleHoliday(holiday.id)}
+                                />
+                                <div className={`mt-1 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-neutral-300'}`}>
+                                  {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-semibold text-neutral-900">{holiday.name}</span>
+                                  <span className="text-xs text-neutral-500">{holiday.dateStr} · {holiday.category}</span>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                      
+                      {isExpanded && holidays.length === 0 && (
+                        <div className="p-4 bg-white border-t border-[#e5e4e0] text-sm text-neutral-400 italic">
+                          No major holidays listed.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Strategy & Context */}
+            <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-neutral-100">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                  <Hash className="w-4 h-4 text-neutral-500" />
+                  Versions per holiday
+                </label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max="5" 
+                  defaultValue="3"
+                  required
+                  className="w-full bg-white border border-neutral-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-neutral-900"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-neutral-500" />
+                  Extra context (optional)
+                </label>
+                <textarea 
+                  placeholder="e.g. Focus on moms buying for toddlers..." 
+                  className="w-full bg-white border border-neutral-300 rounded-lg px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-neutral-900 placeholder:text-neutral-400 h-12"
+                />
+              </div>
+            </div>
+
+            <div className="pt-6">
+              <button 
+                type="submit" 
+                disabled={isGenerating}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-indigo-600/20 disabled:bg-indigo-600/50 disabled:cursor-not-allowed"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span className="flex flex-col items-start text-left ml-2">
+                       <span className="font-bold text-base leading-tight">Running Agentic Workflow...</span>
+                       <span className="text-xs text-indigo-200 font-normal leading-tight mt-0.5">{generationStep}</span>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-6 h-6" />
+                    Generate Landing Pages
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
